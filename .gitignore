@@ -1,0 +1,17 @@
+# Build artifacts
+Tests/obj/
+Tests/bin/
+*.user
+*.suo
+*.cache
+
+# IDE
+.idea/
+.vs/
+.vscode/
+
+# Skills junction (OS-specific symlink)
+.claude/skills/
+
+# Temp
+.tmp_test/
