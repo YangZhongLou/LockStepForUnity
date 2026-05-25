@@ -51,12 +51,24 @@ namespace LockStepLib.Core
             Pools[power].Push(array);
         }
 
-        /// <summary>池化包装结构，using 自动归还</summary>
-        public readonly struct RentedArray : IDisposable
+        /// <summary>池化包装结构，using 自动归还 (不可重复 Dispose)</summary>
+        public struct RentedArray : IDisposable
         {
-            public readonly byte[] Array;
-            public RentedArray(int minSize) { Array = Rent(minSize); }
-            public void Dispose() { Return(Array); }
+            public byte[] Array { get; private set; }
+            private bool _disposed;
+
+            public RentedArray(int minSize)
+            {
+                Array = Rent(minSize);
+                _disposed = false;
+            }
+
+            public void Dispose()
+            {
+                if (_disposed) return;
+                _disposed = true;
+                if (Array != null) { Return(Array); Array = null; }
+            }
         }
 
         #region 辅助

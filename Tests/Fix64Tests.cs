@@ -74,6 +74,11 @@ namespace Tests
 
             TestRunner.AssertEqual(4, Fix64.Round(Fix64.FromDouble(4.25)).ToInt(), "round(4.25) = 4");
             TestRunner.AssertEqual(5, Fix64.Round(Fix64.FromDouble(4.75)).ToInt(), "round(4.75) = 5");
+
+            // 负数 Round (half-away-from-zero)
+            TestRunner.AssertEqual(-2, Fix64.Round(Fix64.FromDouble(-2.3)).ToInt(), "round(-2.3) = -2");
+            TestRunner.AssertEqual(-3, Fix64.Round(Fix64.FromDouble(-2.7)).ToInt(), "round(-2.7) = -3");
+            TestRunner.AssertEqual(-3, Fix64.Round(Fix64.FromDouble(-2.5)).ToInt(), "round(-2.5) = -3");
         }
 
         static void Sqrt()

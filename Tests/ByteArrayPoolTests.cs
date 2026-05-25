@@ -12,6 +12,7 @@ namespace Tests
             RentSizes();
             Reuse();
             Oversized();
+            DoubleDispose();
         }
 
         static void RentSizes()
@@ -56,6 +57,17 @@ namespace Tests
             var big = ByteArrayPool.Rent(100000);
             TestRunner.AssertEqual(100000, big.Length, "Rent(100000) → 100000");
             ByteArrayPool.Return(big); // should be discarded silently
+        }
+
+        static void DoubleDispose()
+        {
+            TestRunner.StartSection("Double Dispose");
+
+            var rented = new ByteArrayPool.RentedArray(256);
+            var arr = rented.Array;
+            rented.Dispose();
+            rented.Dispose(); // 不应抛异常，不应重复归还
+            TestRunner.Assert(true, "double dispose no throw");
         }
     }
 }

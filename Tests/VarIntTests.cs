@@ -48,6 +48,11 @@ namespace Tests
             TestRunner.AssertEqual(2, VarInt.GetUInt32Length(128), "len(128)=2");
             TestRunner.AssertEqual(2, VarInt.GetUInt32Length(16383), "len(16383)=2");
             TestRunner.AssertEqual(4, VarInt.GetUInt32Length(2097152), "len(2097152)=4");
+
+            // 恶意数据边界
+            byte[] malformed = { 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+            try { int off = 0; VarInt.ReadUInt32(malformed, ref off); TestRunner.Assert(false, "should throw"); }
+            catch (System.IO.EndOfStreamException) { TestRunner.Assert(true, "malformed bytes throw"); }
         }
 
         static void TestU32(uint value, int expectedBytes)

@@ -153,15 +153,15 @@ namespace LockStepLib.Session
 
             if (_state != SessionState.Running || !_running) return;
 
-            // 收集当前帧输入
-            if (_commandBuffer.AllPlayersReady(_collectingFrame, _config.PlayerCount))
+            // 收集当前帧输入 (只检查活跃玩家)
+            if (AllActivePlayersReady(_collectingFrame))
             {
-                var inputs = _commandBuffer.GetInputsForFrame(_collectingFrame, _config.PlayerCount);
+                var inputs = GetAllActiveInputs(_collectingFrame);
 
                 // 冗余输入
                 var redundancy = new List<DeterministicInput>();
                 for (int f = _collectingFrame - 1; f > _collectingFrame - 1 - _config.InputRedundancy && f > 0; f--)
-                    redundancy.AddRange(_commandBuffer.GetInputsForFrame(f, _config.PlayerCount));
+                    redundancy.AddRange(GetAllActiveInputs(f));
 
                 // 一致性数据
                 ConsistencyData? consistency = null;
@@ -265,7 +265,8 @@ namespace LockStepLib.Session
         /// <summary>提交本地玩家输入</summary>
         public void SubmitInput(IInputCommand command)
         {
-            // 客户端允许在 Synchronizing 状态提交 (服务端需要等待这些输入)
+            // 观战者不能提交输入
+            if (_role == SessionRole.Spectator) return;
             if (_state != SessionState.Running && _state != SessionState.Connecting) return;
 
             int frame = _role == SessionRole.Server ? _collectingFrame : _synchronizer.NextFrame;
@@ -274,7 +275,7 @@ namespace LockStepLib.Session
             {
                 _commandBuffer.AddInput(_config.LocalPlayerId, frame, command);
             }
-            else if (_players.TryGetValue(0, out var local))
+            else if (_players.TryGetValue(_config.LocalPlayerId, out var local) && local.Connection != null)
             {
                 var input = new DeterministicInput(_config.LocalPlayerId, frame, command);
                 byte[] data = _serializer.SerializeInput(input);
@@ -297,20 +298,20 @@ namespace LockStepLib.Session
             }
             else
             {
-                _players[0] = new PlayerConnection(0, conn);
+                _players[_config.LocalPlayerId] = new PlayerConnection(_config.LocalPlayerId, conn);
                 _idToConnection[conn.Id] = conn;
             }
         }
 
         private void OnTransportDisconnected(IConnection conn, string reason)
         {
-            _idToConnection.TryGetValue(conn.Id, out var unused);
             foreach (var kv in _players)
             {
                 if (kv.Value.Connection == conn)
                 {
                     kv.Value.Disconnected = true;
                     OnPlayerDisconnected?.Invoke(kv.Key, reason);
+                    break;
                 }
             }
         }
@@ -318,6 +319,21 @@ namespace LockStepLib.Session
         #endregion
 
         #region 辅助
+
+        private bool AllActivePlayersReady(int frame)
+        {
+            for (int p = 0; p < _config.PlayerCount; p++)
+            {
+                if (_players.TryGetValue(p, out var pc) && pc.Disconnected) continue;
+                if (!_commandBuffer.HasInput(p, frame)) return false;
+            }
+            return true;
+        }
+
+        private DeterministicInput[] GetAllActiveInputs(int frame)
+        {
+            return _commandBuffer.GetInputsForFrame(frame, _config.PlayerCount);
+        }
 
         private void SetState(SessionState s)
         {

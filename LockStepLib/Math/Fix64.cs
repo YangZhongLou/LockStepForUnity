@@ -98,7 +98,7 @@ namespace LockStepLib.Math
         public static Fix64 operator *(Fix64 a, Fix64 b)
         {
             long v = (long)a.RawValue * b.RawValue;
-            return new Fix64((int)(v >> FRAC_BITS));
+            return new Fix64((int)Clamp64(v >> FRAC_BITS));
         }
 
         public static Fix64 operator /(Fix64 a, Fix64 b)
@@ -140,16 +140,17 @@ namespace LockStepLib.Math
             return new Fix64((r + ONE_I - 1) & ~(ONE_I - 1));
         }
 
-        /// <summary>四舍五入</summary>
+        /// <summary>四舍五入 (half-away-from-zero)</summary>
         public static Fix64 Round(Fix64 x)
         {
             int r = x.RawValue;
-            int frac = r & (ONE_I - 1);
-            if (frac >= HALF_L)
-                return new Fix64((r & ~(ONE_I - 1)) + ONE_I);
-            if (frac <= -HALF_L)
-                return new Fix64((r - ONE_I + 1) & ~(ONE_I - 1));
-            return new Fix64(r & ~(ONE_I - 1));
+            int frac = r & (ONE_I - 1); // 始终在 [0, 65535], 表示 floor 到 r 的小数部分
+            int floor = r & ~(ONE_I - 1);
+            if (frac > HALF_L)
+                return new Fix64(floor + ONE_I);
+            if (frac == HALF_L)
+                return new Fix64(r >= 0 ? floor + ONE_I : floor); // half-away-from-zero
+            return new Fix64(floor);
         }
 
         public static Fix64 Min(Fix64 a, Fix64 b) => a.RawValue <= b.RawValue ? a : b;

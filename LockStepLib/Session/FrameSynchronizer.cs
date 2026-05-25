@@ -41,12 +41,11 @@ namespace LockStepLib.Session
                 _buffer[package.Frame] = package;
         }
 
-        /// <summary>检查是否应该推进下一帧</summary>
+        /// <summary>检查是否应该推进下一帧。NextFrame 就绪，或缓冲足够大时推进。</summary>
         public bool ShouldAdvance()
         {
             if (_buffer.Count == 0) return false;
-            // 缓冲区达到目标大小，或者已经有当前帧
-            return _buffer.Count >= TargetBufferSize || _buffer.ContainsKey(NextFrame);
+            return _buffer.ContainsKey(NextFrame) || _buffer.Count >= TargetBufferSize;
         }
 
         /// <summary>获取下一帧并推进指针。调用前确保 ShouldAdvance 为 true。</summary>

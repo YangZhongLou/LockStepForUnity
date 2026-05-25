@@ -64,7 +64,8 @@ namespace LockStepLib.Core
         {
             uint result = 0;
             int shift = 0;
-            while (offset < buffer.Length)
+            int maxBytes = 5; // uint 最多 5 字节
+            while (offset < buffer.Length && maxBytes-- > 0)
             {
                 byte b = buffer[offset++];
                 result |= (uint)(b & 0x7F) << shift;
@@ -79,7 +80,8 @@ namespace LockStepLib.Core
         {
             ulong result = 0;
             int shift = 0;
-            while (offset < buffer.Length)
+            int maxBytes = 10; // ulong 最多 10 字节
+            while (offset < buffer.Length && maxBytes-- > 0)
             {
                 byte b = buffer[offset++];
                 result |= (ulong)(b & 0x7F) << shift;

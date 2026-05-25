@@ -61,6 +61,7 @@ namespace Tests
 
             ServerCollectAndBroadcast();
             ClientReceiveAndSimulate();
+            FrameSynchronizerContract();
         }
 
         static void ServerCollectAndBroadcast()
@@ -137,6 +138,25 @@ namespace Tests
 
             server.Stop();
             client.Stop();
+        }
+
+        static void FrameSynchronizerContract()
+        {
+            TestRunner.StartSection("FrameSynchronizer Contract");
+
+            var sync = new LockStepLib.Session.FrameSynchronizer(2);
+            // 缓冲只有 frame 3, NextFrame=0 → 不推进
+            sync.Enqueue(new FramePackage(3, new DeterministicInput[0]));
+            TestRunner.AssertEqual(false, sync.ShouldAdvance(), "only F3, no F0 → false");
+
+            // 加 frame 0 → NextFrame 就绪, 推进
+            sync.Enqueue(new FramePackage(0, new DeterministicInput[0]));
+            TestRunner.AssertEqual(true, sync.ShouldAdvance(), "F0 arrived → true");
+
+            // Dequeue 后 NextFrame=1, 缓冲有 F1 和 F3 → F1 就绪
+            sync.Dequeue();
+            sync.Enqueue(new FramePackage(1, new DeterministicInput[0]));
+            TestRunner.AssertEqual(true, sync.ShouldAdvance(), "F1 present → true");
         }
     }
 }

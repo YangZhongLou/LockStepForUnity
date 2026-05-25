@@ -98,7 +98,8 @@ namespace LockStepLib.Transport
                 }
                 catch (SocketException)
                 {
-                    break;
+                    if (!_running) break; // 主动停止 → 退出
+                    // 瞬时错误 → 继续接受
                 }
                 catch (Exception)
                 {

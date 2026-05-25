@@ -175,6 +175,8 @@ namespace LockStepLib.Command
         private DeterministicInput[] ReadInputArray(BinaryReader reader)
         {
             int count = (int)VarInt.ReadUInt32(reader.BaseStream);
+            if (count < 0 || count > 2048) // 单帧最大 2048 条输入
+                throw new FormatException($"输入数量超限: {count}");
             var result = new DeterministicInput[count];
             for (int i = 0; i < count; i++)
                 result[i] = ReadInput(reader);
